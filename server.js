@@ -29,8 +29,7 @@ store.on('error', function(error) {
 });
 
 const corsOptions = {
-    // origin: process.env.REACT_APP_ADDRESS,
-    origin: "http://localhost:3001",
+    origin: process.env.REACT_APP_ADDRESS || "http://localhost:3001",
     // allowedHeaders: "*",
     // requestHeaders: "*",
     // credentials: true,
