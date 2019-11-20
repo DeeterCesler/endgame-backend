@@ -30,18 +30,46 @@ router.post("/new", async (req, res) => {
   console.log("WHAT'S THE EMAIL??", req.email); // this is for testing/debugging purposes
   const foundUser = await User.findOne({email: req.email});
   console.log("USER & ID: " + foundUser + ", " + foundUser._id);
+  // if that endpoint already exists, overwrite it
   const newRoute = {};
   newRoute.userId = foundUser._id;
   newRoute["layerOne"] = {[req.body.endpointName]: req.body.endpointValue};
   console.log(newRoute);
-  const savedRoute  = await Route.create(newRoute);
+  // line 39 doesn't work yet, just returns null
+  const routeWhichMayExist = await Route.findOne({layerOne: {[req.body.endpointName]: {$not: null}}})
+  console.log("IS IT NULL? " + routeWhichMayExist);
+  let savedRoute;
+  if(routeWhichMayExist){
+    // overwrite old routes
+    savedRoute = await Route.findByIdAndUpdate(routeWhichMayExist._id, newRoute)
+  }
+  else {
+    savedRoute  = await Route.create(newRoute);
+  }
+  res.header(
+    {"Access-Control-Allow-Origin": "*"}
+  )
+  res.json({
+    status: 200,
+    message: "post request successful",
+    data: savedRoute
+  });
+})
+
+// Get all the users endpoints
+router.get("/all", async (req, res) => {
+  console.log(req.headers)
+  const shit = await withAuth(req, res) // this sets req.email to the user email
+  console.log("WHAT'S THE EMAIL??", req.email); // this is for testing/debugging purposes
+  const foundUser = await User.findOne({email: req.email});
+  const foundRoutes = await Route.find({userId: foundUser._id})
   res.header(
       {"Access-Control-Allow-Origin": "*"}
   )
   res.json({
       status: 200,
       message: "post request successful",
-      data: savedRoute
+      data: foundRoutes
   });
 })
 
@@ -121,11 +149,22 @@ router.put("/:id/edit", checkForToken, async (req, res) => {
 })
 
 router.delete("/:id", checkForToken, async (req, res) => {
-  await Contact.findByIdAndDelete(req.params.id);
-  res.json({
-      status: 200,
-      message: "shit deleted"
-  })
+  const shit = await withAuth(req, res) // this sets req.email to the user email
+  console.log("WHAT'S THE EMAIL??", req.email); // this is for testing/debugging purposes
+  const foundUser = await User.findOne({email: req.email});
+  const foundRoute = await Route.findOne({userId: foundUser._id})
+  if(foundRoute){
+    await Route.findByIdAndDelete(req.params.id);
+    res.json({
+        status: 200,
+        message: "shit deleted"
+    })
+  } else {
+    res.json({
+      status: 403,
+      message: "Only the user who created the route may delete it. If that's you, please make sure you're logged in."
+    })
+  }
 })
 
 module.exports = router;
