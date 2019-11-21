@@ -96,25 +96,35 @@ router.post("/:id/:layerOne?/:layerTwo?/:layerThree?", async (req, res) => {
   })
 });
 
-router.get("/:id/:layerOne?/:layerTwo?/:layerThree?", async (req, res) => {
+router.get("/:id/:submittedLayerOne?/:submittedLayerTwo?/:submittedLayerThree?", async (req, res) => {
   const user = await User.findById(req.params.id);
   console.log("USER: " + user["name"]);
+  console.log("LAYER ONE: " + req.params.submittedLayerOne)
+  console.log("LAYER TWO: " + req.params.layerTwo)
   //parses through string and makes an array out of every set of characters 
-  const layerOne = req.params.layerOne
-  // const layerTwo = req.params.layerTwo
+  let submittedLayerOne = req.params.submittedLayerOne
+  const submittedLayerTwo = req.params.submittedLayerTwo
+  const submittedLayerThree = req.params.submittedLayerThree
+  if(req.params.submittedLayerTwo){
+    submittedLayerOne = submittedLayerOne + "/" + submittedLayerTwo
+    if(req.params.submittedLayerThree){
+      submittedLayerOne = submittedLayerOne + "/" + submittedLayerThree
+    }
+  }
+  console.log("NEW LAYER 'ONE': " + submittedLayerOne)
   // const layerThree = req.params.layerThree
 
   const routes = await Route.find({userId: req.params.id});
   for(let i=0; i<routes.length;i++){
-    if(routes[i].layerOne[req.params.layerOne] != null){
+    if(routes[i].layerOne[submittedLayerOne] != null){
       route = routes[i]
     }
   }
   console.log("ROUTE: " + route)
-  console.log("LAYER ONE: " + route.layerOne[req.params.layerOne])
+  console.log("LAYER ONE: " + route.layerOne[submittedLayerOne])
   res.json({
     id: req.params.id,
-    [req.params.layerOne]: route.layerOne[req.params.layerOne]
+    data: route.layerOne[submittedLayerOne]
     //  layerTwo: layerTwo,
     //  layerThree: layerThree 
   })
