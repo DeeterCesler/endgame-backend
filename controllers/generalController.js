@@ -25,11 +25,9 @@ withAuth = async (req, res) => {
 }
 
 router.post("/new", async (req, res) => {
-  console.log(req.headers)
+  console.log("VALUE: " + req.body.endpointValue)
   const shit = await withAuth(req, res) // this sets req.email to the user email
-  console.log("WHAT'S THE EMAIL??", req.email); // this is for testing/debugging purposes
   const foundUser = await User.findOne({email: req.email});
-  console.log("USER & ID: " + foundUser + ", " + foundUser._id);
   // if that endpoint already exists, overwrite it
   const newRoute = {};
   newRoute.userId = foundUser._id;
