@@ -63,13 +63,6 @@ router.post('/register', async (req, res) => {
         userEntry.name = req.body.name;
         const user = await User.create(userEntry);
         user.save();
-        // initializing the session here
-        req.session.username = req.body.username;
-        req.session.name = req.body.name;
-        req.session.logged   = true;
-        req.session.message  = '';
-        req.session.userId = user._id;
-        console.log(userEntry);
         res.send({
             status: 200,
             data: userEntry   
@@ -89,10 +82,6 @@ router.post('/login', async (req, res) => {
         const foundUser = await User.findOne({email: req.body.email.toLowerCase()});
         if(foundUser){
             if(bcrypt.compareSync(req.body.password, foundUser.password)){
-                // req.session.logged = true;
-                // req.session.email = foundUser.email;
-                // req.session.name = foundUser.name;
-                // req.session.userId = foundUser._id;
                 const payload = foundUser.email;
                 const token = jwt.sign(payload, "secret $tash");
                 // res.cookie('token', token, {httpOnly: true})
