@@ -1,7 +1,7 @@
 {
-  "name": "endgame",
+  "name": "fetchspot",
   "version": "1.0.0",
-  "description": "like postman, but the opposite",
+  "description": "Static JSON endpoints for frontend developers",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

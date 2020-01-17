@@ -95,7 +95,7 @@ router.post("/:id/:layerOne?/:layerTwo?/:layerThree?", async (req, res) => {
 });
 
 // Getting requested route
-router.get("/:id/:submittedLayerOne?/:submittedLayerTwo?/:submittedLayerThree?", async (req, res) => {
+router.get("/:id/:submittedLayerOne?/:submittedLayerTwo?/:submittedLayerThree?/:submittedLayerFour?/:submittedLayerFive?", async (req, res) => {
   const user = await User.findById(req.params.id);
 
   //parses through string and makes an array out of every set of characters 
@@ -106,6 +106,12 @@ router.get("/:id/:submittedLayerOne?/:submittedLayerTwo?/:submittedLayerThree?",
     submittedLayerOne = submittedLayerOne + "/" + submittedLayerTwo
     if(req.params.submittedLayerThree){
       submittedLayerOne = submittedLayerOne + "/" + submittedLayerThree
+      if(req.params.submittedLayerFour){
+        submittedLayerOne = submittedLayerOne + "/" + req.params.submittedLayerFour
+        if(req.params.submittedLayerFive){
+          submittedLayerOne = submittedLayerOne + "/" + req.params.submittedLayerFive
+        }
+      }
     }
   }
 
