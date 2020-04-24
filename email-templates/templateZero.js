@@ -1,9 +1,10 @@
-const templateZero = (userEmail, contactEmail, contactName, contactSummary) => {
+const templateZero = (userName, userId) => {
     text = 
-    `<b>Hi ${userEmail},</b>
+    `<b>Hi ${userName},</b>
     <br/>
-    <p>According to the reminder you sent, it's time to reach out to <strong>${contactName}</strong>. Their email is <a href="mailto:${contactEmail}">${contactEmail}</a>.</p>
-    <p>Here's what you said it's important to know about them, or what you discussed recently: <br/> ${contactSummary}. <br/> <br/> If you want to update what you talked about, you can <a href="${process.env.REACT_APP_ADDRESS + "/contacts/all"}">do that here</a>.</p>`;
+    <p>You're getting this message because it looks like you requested a password reset.</p>
+    <p>You can reset your password through <a href="${process.env.REACT_APP_ADDRESS + "/reset/confirm/" + userId}">this link</a>.</p>
+    <p>If you did <i>not</i> request this password reset, please <a href='mailto:deeter.cesler@gmail.com'>reach out to me immediately</a> and let me know.</p>`;
     return text;
 }
 

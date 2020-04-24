@@ -5,6 +5,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const withAuth = require("../middleware/authToken");
 const secret = "secret $tash";
+const sendResetPasswordEmail = require('../emails');
 
 
 router.post('/verify', withAuth, async (req, res) => {
@@ -53,14 +54,52 @@ router.post('/register', async (req, res) => {
         console.log(err);
     }
 });
+
+router.post('/reset', async (req, res) => {
+    console.log('here i guesss: ' + JSON.stringify(req.body));
+    try{
+        const email = req.body.email.toLowerCase();
+        const foundUser = await User.findOne({email: email});
+        console.log('found bish: ' + foundUser);
+        if (foundUser) {
+            console.log('User found. Sending a password reset email.');
+            sendResetPasswordEmail(foundUser);
+        } else {
+            console.log('not a real user lol');
+        }
+    } catch (err) {
+        console.log('Error: ' + err);
+        res.send(err);
+    }
+});
+
+router.post('/reset/confirm', async (req, res) => {
+    console.log('fuck + ' + JSON.stringify(req.body))
+    try {
+        const id = req.body.id;
+        const password = req.body.password;
+        const passwordHash = bcrypt.hashSync(password, bcrypt.genSaltSync(12));
+        console.log('pw hash: ' + passwordHash)
+        const foundUser = await User.findByIdAndUpdate(id, {password: passwordHash});
+        console.log('foudn user::: ' + foundUser);
+        // foundUser.update({password: passwordHash});
+        // foundUser.save();
+        res.send(200);
+    } catch (e) {
+        console.log('error: ' + e);
+    }
+});
   
   
 router.post('/login', async (req, res) => {
     console.log("TRYING LOGIN")
-    const {email, password } = req.body
+    console.log("REK BODY: " + JSON.stringify(req.body))
+    const { email, password } = req.body
     try {
+        console.log("GOT HERE")
         const foundUser = await User.findOne({email: req.body.email.toLowerCase()});
         if(foundUser){
+            console.log("PWs - " + req.body.password + foundUser.password)
             if(bcrypt.compareSync(req.body.password, foundUser.password)){
                 const payload = foundUser.email;
                 const token = jwt.sign(payload, "secret $tash");
@@ -71,10 +110,12 @@ router.post('/login', async (req, res) => {
                 })
                 console.log("done logged in")
             } else {
-                req.session.message = 'Username or Password is Wrong';
+                console.log("wrong password")
+                // req.session.message = 'Username or Password is Wrong';
             }
-    } else {
-            req.session.message = 'Username or Password is Wrong';
+        } else {
+            console.log("no user bitch")
+            // req.session.message = 'Username or Password is Wrong';
     } 
     } catch(err) {
         console.log(err);
