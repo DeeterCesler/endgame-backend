@@ -56,10 +56,12 @@ router.post('/register', async (req, res) => {
             userEntry.name = req.body.name;
             const user = await User.create(userEntry);
             console.log('user id: ' + user._id);
+            const token = jwt.sign(user.email, "secret $tash");
             user.save();
             res.send({
                 status: 200,
                 data: user,
+                token: token
             });
             console.log("done registered");
         }
