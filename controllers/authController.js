@@ -36,20 +36,33 @@ router.post('/verify', withAuth, async (req, res) => {
 
 router.post('/register', async (req, res) => {
     try{
-        const password = req.body.password;
-        const passwordHash = bcrypt.hashSync(password, bcrypt.genSaltSync(12));
-        // Create an object to put into our database into the User Model
-        const userEntry = {};
-        userEntry.password = passwordHash;
-        userEntry.email = req.body.email.toLowerCase();
-        userEntry.name = req.body.name;
-        const user = await User.create(userEntry);
-        user.save();
-        res.send({
-            status: 200,
-            data: userEntry   
-        });
-        console.log("done registered");
+        // Check to see if username already exists
+        const possibleUser = await User.find({ email: req.body.email });
+        console.log('poss user: ' + possibleUser.length)
+        if (possibleUser.length) {
+            console.log('got here!!' + possibleUser.email);
+            res.send({
+                status: 401,
+                message: "Email is already registered.",
+            })
+        } else {
+            console.log('got here i guess!!')
+            const password = req.body.password;
+            const passwordHash = bcrypt.hashSync(password, bcrypt.genSaltSync(12));
+            // Create an object to put into our database into the User Model
+            const userEntry = {};
+            userEntry.password = passwordHash;
+            userEntry.email = req.body.email.toLowerCase();
+            userEntry.name = req.body.name;
+            const user = await User.create(userEntry);
+            console.log('user id: ' + user._id);
+            user.save();
+            res.send({
+                status: 200,
+                data: user,
+            });
+            console.log("done registered");
+        }
     } catch(err) {
         console.log(err);
     }
