@@ -95,6 +95,8 @@ router.post('/login', async (req, res) => {
     console.log("TRYING LOGIN")
     console.log("REK BODY: " + JSON.stringify(req.body))
     const { email, password } = req.body
+    console.log('EMAIL: ' + email);
+    console.log('PASSWERD: ' + password);
     try {
         console.log("GOT HERE")
         const foundUser = await User.findOne({email: req.body.email.toLowerCase()});
@@ -111,12 +113,18 @@ router.post('/login', async (req, res) => {
                 console.log("done logged in")
             } else {
                 console.log("wrong password")
-                // req.session.message = 'Username or Password is Wrong';
+                res.send({
+                    status: 401,
+                    data: "Username or Password is Wrong",
+                });
             }
         } else {
             console.log("no user bitch")
-            // req.session.message = 'Username or Password is Wrong';
-    } 
+            res.send({
+                status: 401,
+                data: "Username or Password is Wrong",
+            });
+        }
     } catch(err) {
         console.log(err);
         res.send(err);
