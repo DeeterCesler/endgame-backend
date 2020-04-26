@@ -28,20 +28,29 @@ router.post("/new", async (req, res) => {
   console.log("VALUE: " + req.body.endpointValue)
   const emailChecker = await withAuth(req, res) // this sets req.email to the user email
   const foundUser = await User.findOne({email: req.email});
+  // check for blank values
+  if (!req.body.endpointName || !req.body.endpointValue) {
+    res.send({
+      status: 500,
+      message: "Blank value(s) submitted."
+    })
+  }
   // if that endpoint already exists, overwrite it
   const newRoute = {};
   newRoute.userId = foundUser._id;
   newRoute["layerOne"] = {[req.body.endpointName]: req.body.endpointValue};
-  console.log(newRoute);
-  // line 39 doesn't work yet, just returns null
-  const routeWhichMayExist = await Route.findOne({layerOne: {[req.body.endpointName]: {$not: null}}})
+
+  // line 45 doesn't work yet, just returns null
+  const routeWhichMayExist = await Route.findOne({ layerOne: { [req.body.endpointName]: { $not: null }}})  
   console.log("IS IT NULL? " + routeWhichMayExist);
   let savedRoute;
   if(routeWhichMayExist){
+    console.log('Found route with same name, updating.')
     // overwrite old routes
     savedRoute = await Route.findByIdAndUpdate(routeWhichMayExist._id, newRoute)
   }
   else {
+    console.log('Creating new route.')
     savedRoute  = await Route.create(newRoute);
   }
   res.header(
@@ -56,8 +65,7 @@ router.post("/new", async (req, res) => {
 
 // Get all the users' endpoints
 router.get("/all", async (req, res) => {
-  console.log(req.headers)
-  const emailChecker = await withAuth(req, res) // this sets req.email to the user email
+  await withAuth(req, res) // this sets req.email to the user email
   console.log("WHAT'S THE EMAIL??", req.email); // this is for testing/debugging purposes
   const foundUser = await User.findOne({email: req.email});
   const foundRoutes = await Route.find({userId: foundUser._id})
@@ -134,7 +142,7 @@ router.get("/:id/:submittedLayerOne?/:submittedLayerTwo?/:submittedLayerThree?/:
 });
 
 router.delete("/:id", checkForToken, async (req, res) => {
-  const emailChecker = await withAuth(req, res) // this sets req.email to the user email
+  await withAuth(req, res) // this sets req.email to the user email
   console.log("WHAT'S THE EMAIL??", req.email); // this is for testing/debugging purposes
   const foundUser = await User.findOne({email: req.email});
   const foundRoute = await Route.findOne({userId: foundUser._id})
