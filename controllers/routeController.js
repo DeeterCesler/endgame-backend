@@ -26,8 +26,7 @@ withAuth = async (req, res) => {
 }
 
 router.post("/new", async (req, res) => {
-  console.log("VALUE: " + req.body.endpointValue)
-  const emailChecker = await withAuth(req, res) // this sets req.email to the user email
+  await withAuth(req, res) // this sets req.email to the user email
   const foundUser = await User.findOne({email: req.email});
   // check for blank values
   if (!req.body.endpointName || !req.body.endpointValue) {
@@ -36,19 +35,31 @@ router.post("/new", async (req, res) => {
       message: "Blank value(s) submitted."
     })
   }
-  // if that endpoint already exists, overwrite it
+
   const newRoute = {};
   newRoute.userId = foundUser._id;
   newRoute["layerOne"] = {[req.body.endpointName]: req.body.endpointValue};
 
-  // line 45 doesn't work yet, just returns null
-  const routeWhichMayExist = await Route.findOne({ layerOne: { [req.body.endpointName]: { $not: null }}})  
-  console.log("IS IT NULL? " + routeWhichMayExist);
-  let savedRoute;
-  if(routeWhichMayExist){
+
+  let rootLayer = req.body.endpointName
+  // Finding all routes associated with a user
+  const routes = await Route.find({userId: foundUser.id});
+
+  let route = null;
+  if (routes.length) {
+    console.log('here')
+    for(let i=0; i<routes.length;i++){
+      console.log('okayyyy ' + JSON.stringify(routes[i].layerOne))
+      if(routes[i].layerOne[rootLayer]){
+        console.log('SAME ROUTE UWU');
+        route = routes[i]
+      }
+    }
+  }
+  
+  if (route !== null) {
     console.log('Found route with same name, updating.')
-    // overwrite old routes
-    savedRoute = await Route.findByIdAndUpdate(routeWhichMayExist._id, newRoute)
+    savedRoute = await Route.findByIdAndUpdate(route._id, newRoute)
   }
   else {
     console.log('Creating new route.')
