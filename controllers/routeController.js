@@ -7,6 +7,7 @@ const checkForToken = require("../middleware/authToken");
 const jwt = require('jsonwebtoken');
 const secret = "secret $tash";
 
+router.get('/favicon.ico', (req, res) => res.sendStatus(204));
 
 withAuth = async (req, res) => {
   const token = req.headers["authorization"];
@@ -81,6 +82,7 @@ router.get("/all", async (req, res) => {
 
 // Posting/creating a route
 router.post("/:id/:layerOne?/:layerTwo?/:layerThree?", async (req, res) => {
+  console.log('is this shit literally ever hit??')
   const user = await User.findById(req.params.id);
   console.log("USER: " + user["name"]);
   //parses through string and makes an array out of every set of characters 
@@ -104,41 +106,44 @@ router.post("/:id/:layerOne?/:layerTwo?/:layerThree?", async (req, res) => {
 
 // Getting requested route
 router.get("/:id/:submittedLayerOne?/:submittedLayerTwo?/:submittedLayerThree?/:submittedLayerFour?/:submittedLayerFive?", async (req, res) => {
-  const user = await User.findById(req.params.id);
-
-  //parses through string and makes an array out of every set of characters 
-  let submittedLayerOne = req.params.submittedLayerOne
-  const submittedLayerTwo = req.params.submittedLayerTwo
-  const submittedLayerThree = req.params.submittedLayerThree
+  //parses through request params and concatentates the route name
+  let rootLayer = req.params.submittedLayerOne
   if(req.params.submittedLayerTwo){
-    submittedLayerOne = submittedLayerOne + "/" + submittedLayerTwo
+    rootLayer = rootLayer + "/" + req.params.submittedLayerTwo
     if(req.params.submittedLayerThree){
-      submittedLayerOne = submittedLayerOne + "/" + submittedLayerThree
+      rootLayer = rootLayer + "/" + req.params.submittedLayerThree
       if(req.params.submittedLayerFour){
-        submittedLayerOne = submittedLayerOne + "/" + req.params.submittedLayerFour
+        rootLayer = rootLayer + "/" + req.params.submittedLayerFour
         if(req.params.submittedLayerFive){
-          submittedLayerOne = submittedLayerOne + "/" + req.params.submittedLayerFive
+          rootLayer = rootLayer + "/" + req.params.submittedLayerFive
         }
       }
     }
   }
-
   // Finding all routes associated with a user
   const routes = await Route.find({userId: req.params.id});
-
+  
+  let route = null;
   // Choosing the route of the submitted name
-  for(let i=0; i<routes.length;i++){
-    if(routes[i].layerOne[submittedLayerOne] != null){
-      route = routes[i]
+  if (routes) {
+    for(let i=0; i<routes.length;i++){
+      if(routes[i].layerOne[rootLayer]){
+        route = routes[i]
+      }
     }
   }
-
-  res.json({
-    id: req.params.id,
-    data: route.layerOne[submittedLayerOne]
-    //  layerTwo: layerTwo,
-    //  layerThree: layerThree 
-  })
+  
+  if (route === null) {
+    res.json({
+      id: req.params.id,
+      data: "No routes available with that user ID."
+    })
+  } else {
+    res.json({
+      id: req.params.id,
+      data: route.layerOne[rootLayer]
+    })
+  }
 });
 
 router.delete("/:id", checkForToken, async (req, res) => {
