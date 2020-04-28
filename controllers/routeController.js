@@ -45,11 +45,8 @@ router.post("/new", async (req, res) => {
 
   let route = null;
   if (routes.length) {
-    console.log('here')
     for(let i=0; i<routes.length;i++){
-      console.log('okayyyy ' + JSON.stringify(routes[i].layerOne))
       if(routes[i].layerOne[rootLayer]){
-        console.log('SAME ROUTE UWU');
         route = routes[i]
       }
     }
@@ -119,7 +116,7 @@ router.get("/:id/:submittedLayerOne?/:submittedLayerTwo?/:submittedLayerThree?/:
       }
     }
   }
-  let routeId = route._id;
+  
   if (route) {
     const thisMonth = new Date().getMonth();
     const thisYear = new Date().getFullYear();
@@ -161,30 +158,18 @@ router.get("/:id/:submittedLayerOne?/:submittedLayerTwo?/:submittedLayerThree?/:
     }
 
 
-    console.log('this months route calls - ' + route.numberOfCalls.details[thisYear][thisMonth]);
     ++route.numberOfCalls.details[thisYear][thisMonth];
-
-    console.log('this months user calls - ' + user.numberOfCalls.details[thisYear][thisMonth]);
     ++user.numberOfCalls.details[thisYear][thisMonth];
-    // 
-    console.log('answeR: ' + route.numberOfCalls.details[thisYear][thisMonth]);
-    console.log('user answeR: ' + user.numberOfCalls.details[thisYear][thisMonth]);
-    // await route.save();
+
     route.markModified('numberOfCalls.details');
     user.markModified('numberOfCalls.details');
+
     ++route.numberOfCalls.total;
     ++user.numberOfCalls.total;
-    console.log('this months calls NOW - ' + route.numberOfCalls.details[thisYear][thisMonth]);
-    console.log('this user months calls NOW - ' + user.numberOfCalls.details[thisYear][thisMonth]);
+
     await route.save();
     await user.save();
   }
-
-  const newishRoute = await Route.findById(routeId);
-  console.log('did the route totals save?? ' + JSON.stringify(newishRoute))
-  const newishUser = await User.findById(req.params.id);
-  console.log('did the USER totals save?? ' + JSON.stringify(newishUser))
-
   
   if (route === null) {
     res.json({
