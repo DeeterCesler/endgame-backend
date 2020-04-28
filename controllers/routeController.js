@@ -91,32 +91,9 @@ router.get("/all", async (req, res) => {
   });
 })
 
-// Posting/creating a route
-router.post("/:id/:layerOne?/:layerTwo?/:layerThree?", async (req, res) => {
-  console.log('is this shit literally ever hit??')
-  const user = await User.findById(req.params.id);
-  console.log("USER: " + user["name"]);
-  //parses through string and makes an array out of every set of characters 
-  const layerOne = req.params.layerOne
-  // const layerTwo = req.params.layerTwo
-  // const layerThree = req.params.layerThree
-
-  const routes = await Route.find({userId: req.params.id});
-  for(let i=0; i<routes.length;i++){
-    if(routes[i].layerOne[req.params.layerOne] != null){
-      route = routes[i]
-    }
-  }
-  console.log("ROUTE: " + route)
-  console.log("LAYER ONE: " + route.layerOne[req.params.layerOne])
-  res.json({
-    id: req.params.id,
-    [req.params.layerOne]: route.layerOne[req.params.layerOne]
-  })
-});
-
 // Getting requested route
 router.get("/:id/:submittedLayerOne?/:submittedLayerTwo?/:submittedLayerThree?/:submittedLayerFour?/:submittedLayerFive?", async (req, res) => {
+  console.log('--------------------------------------------------------')
   //parses through request params and concatentates the route name
   let rootLayer = req.params.submittedLayerOne
   if(req.params.submittedLayerTwo){
@@ -143,6 +120,38 @@ router.get("/:id/:submittedLayerOne?/:submittedLayerTwo?/:submittedLayerThree?/:
       }
     }
   }
+  let routeId = route._id;
+  if (route) {
+    const thisMonth = new Date().getMonth();
+    const thisYear = new Date().getFullYear();
+    if (route.numberOfCalls === undefined) {
+      console.log('creating record of calls')
+      route.numberOfCalls = {
+        details: {},
+        total: 0,
+      };
+    }
+    if (route.numberOfCalls.details[thisYear] === undefined) {
+      console.log('creating year')
+      route.numberOfCalls.details[thisYear] = {};
+    }
+    if (route.numberOfCalls.details[thisYear][thisMonth] === undefined) {
+      route.numberOfCalls.details[thisYear][thisMonth] = 0;
+      console.log('creating month')
+    }
+    console.log('this months calls - ' + route.numberOfCalls.details[thisYear][thisMonth]);
+    ++route.numberOfCalls.details[thisYear][thisMonth];
+    console.log('answeR: ' + route.numberOfCalls.details[thisYear][thisMonth]);
+    // await route.save();
+    route.markModified('numberOfCalls.details');
+    ++route.numberOfCalls.total;
+    console.log('this months calls NOW - ' + route.numberOfCalls.details[thisYear][thisMonth]);
+    await route.save();
+  }
+
+  const newishRoute = await Route.findById(routeId);
+  console.log('did the route totals save?? ' + JSON.stringify(newishRoute))
+
   
   if (route === null) {
     res.json({
@@ -163,6 +172,7 @@ router.delete("/:id", checkForToken, async (req, res) => {
   const foundUser = await User.findOne({email: req.email});
   const foundRoute = await Route.findOne({userId: foundUser._id})
   if(foundRoute){
+    if(foundRoute.numberOfCalls)
     await Route.findByIdAndDelete(req.params.id);
     res.json({
         status: 200,
