@@ -20,7 +20,11 @@ router.post('/verify', withAuth, async (req, res) => {
           try{
               console.log("EMAIL: " + req.email)
               foundUser = await User.findOne({email: req.email});
-              foundUserId = foundUser._id
+              foundUserId = foundUser._id;
+              name = foundUser.name;
+              owner = foundUser.owner;
+              groupAdmin = foundUser.groupAdmin;
+              planType = foundUser.planType;
           } catch(err){
               console.log(err)
               foundUser = "lol"
@@ -28,7 +32,11 @@ router.post('/verify', withAuth, async (req, res) => {
           res.send({
             status: 200,
             email: decoded,
-            id: foundUserId
+            id: foundUserId,
+            name: name,
+            owner: owner,
+            groupAdmin: groupAdmin,
+            planType: planType,
           })
       }
     })
@@ -156,5 +164,24 @@ router.get('/logout', (req, res) => {
     });
 });
   
+router.post('/:id/admin/create', async (req, res) => {
+    try {
+        const foundUser = await User.findById(req.params.id);
+        console.log('is owner? ' + foundUser.owner);
+        if (foundUser.owner) {
+            console.log('Already an admin.')
+        } else {
+            foundUser.owner = true;
+            foundUser.save();
+        }
+        res.send({
+            status: 200,
+            data: foundUser,
+        })
+    } catch (err) {
+        console.log('err')
+        res.sendStatus(500);
+    }
+});
   
 module.exports = router;

@@ -6,10 +6,12 @@ const methodOverride = require("method-override");
 const userController = require("./controllers/usersController");
 const authController = require("./controllers/authController")
 const routeController = require("./controllers/routeController")
+const ownerController = require("./controllers/ownerController")
 const session = require('express-session');
 const MongoDBStore = require('connect-mongodb-session')(session);
 const requireLogin = require("./middleware/requireLogin");
 const checkForToken = require("./middleware/authToken");
+const ownerCheck = require("./middleware/ownerCheck");
 require('./db/db');
 require("dotenv").config();
 
@@ -59,6 +61,7 @@ app.use(bodyParser.json());
 // Routing
 app.use("/auth", authController);
 app.use("/user", requireLogin, userController);
+app.use("/owner", ownerCheck, ownerController);
 app.use("/", routeController);
 
 
