@@ -8,6 +8,10 @@ const userSchema = new mongoose.Schema({
     owner: {type: Boolean, default: false},
     groupAdmin: Boolean,
     planType: String,
+    numberOfCalls: {
+        total: {type: Number, default: 0},
+        details: Object,
+    },
 })
 
 module.exports = mongoose.model('User', userSchema);
