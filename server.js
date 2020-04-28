@@ -12,6 +12,7 @@ const MongoDBStore = require('connect-mongodb-session')(session);
 const requireLogin = require("./middleware/requireLogin");
 const checkForToken = require("./middleware/authToken");
 const ownerCheck = require("./middleware/ownerCheck");
+const favicon = require('serve-favicon');
 require('./db/db');
 require("dotenv").config();
 
@@ -36,6 +37,7 @@ const corsOptions = {
   
 // Middleware
 app.use(cors(corsOptions));
+app.use(favicon(__dirname + '/bone.png'));
 // https redirect
 if(process.env.NODE_ENV === 'production') {
     app.use((req, res, next) => {

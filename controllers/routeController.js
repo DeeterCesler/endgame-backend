@@ -7,8 +7,6 @@ const checkForToken = require("../middleware/authToken");
 const jwt = require('jsonwebtoken');
 const secret = "secret $tash";
 
-router.get('/favicon.ico', (req, res) => res.sendStatus(204));
-
 withAuth = async (req, res) => {
   const token = req.headers["authorization"];
   console.log(token)
