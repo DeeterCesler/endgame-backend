@@ -55,6 +55,7 @@ router.post('/register', async (req, res) => {
             })
         } else {
             console.log('got here i guess!!')
+            const today = new Date();
             const password = req.body.password;
             const passwordHash = bcrypt.hashSync(password, bcrypt.genSaltSync(12));
             // Create an object to put into our database into the User Model
@@ -62,6 +63,7 @@ router.post('/register', async (req, res) => {
             userEntry.password = passwordHash;
             userEntry.email = req.body.email.toLowerCase();
             userEntry.name = req.body.name;
+            userEntry.signupDate = today;
             const user = await User.create(userEntry);
             console.log('user id: ' + user._id);
             const token = jwt.sign(user.email, "secret $tash");

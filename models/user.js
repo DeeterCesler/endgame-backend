@@ -12,6 +12,7 @@ const userSchema = new mongoose.Schema({
         total: {type: Number, default: 0},
         details: Object,
     },
+    signupDate: Date,
 })
 
 module.exports = mongoose.model('User', userSchema);
