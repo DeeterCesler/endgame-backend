@@ -33,41 +33,49 @@ router.post("/new", async (req, res) => {
       message: "Blank value(s) submitted."
     })
   }
-
-  const newRoute = {};
-  newRoute.userId = foundUser._id;
-  newRoute["layerOne"] = {[req.body.endpointName]: req.body.endpointValue};
-
-
-  let rootLayer = req.body.endpointName
-  // Finding all routes associated with a user
-  const routes = await Route.find({userId: foundUser.id});
-
-  let route = null;
-  if (routes.length) {
-    for(let i=0; i<routes.length;i++){
-      if(routes[i].layerOne[rootLayer]){
-        route = routes[i]
+  // Check for data length (to prevent system abuse)
+  if (JSON.stringify(req.body.endpointValue).length > 2000) {
+    console.log('too long jones')
+    res.send({
+      status: 500,
+      message: "JSON message must be fewer than 2,000 characters."
+    })
+  } else {
+    const newRoute = {};
+    newRoute.userId = foundUser._id;
+    newRoute["layerOne"] = {[req.body.endpointName]: req.body.endpointValue};
+  
+  
+    let rootLayer = req.body.endpointName
+    // Finding all routes associated with a user
+    const routes = await Route.find({userId: foundUser.id});
+  
+    let route = null;
+    if (routes.length) {
+      for(let i=0; i<routes.length;i++){
+        if(routes[i].layerOne[rootLayer]){
+          route = routes[i]
+        }
       }
     }
+    
+    if (route !== null) {
+      console.log('Found route with same name, updating.')
+      savedRoute = await Route.findByIdAndUpdate(route._id, newRoute)
+    }
+    else {
+      console.log('Creating new route.')
+      savedRoute  = await Route.create(newRoute);
+    }
+    res.header(
+      {"Access-Control-Allow-Origin": "*"}
+    )
+    res.json({
+      status: 200,
+      message: "post request successful",
+      data: savedRoute
+    });
   }
-  
-  if (route !== null) {
-    console.log('Found route with same name, updating.')
-    savedRoute = await Route.findByIdAndUpdate(route._id, newRoute)
-  }
-  else {
-    console.log('Creating new route.')
-    savedRoute  = await Route.create(newRoute);
-  }
-  res.header(
-    {"Access-Control-Allow-Origin": "*"}
-  )
-  res.json({
-    status: 200,
-    message: "post request successful",
-    data: savedRoute
-  });
 })
 
 // Get all the users' endpoints
