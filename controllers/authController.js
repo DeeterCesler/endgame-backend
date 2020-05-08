@@ -10,16 +10,15 @@ const stripe = require('stripe')('sk_test_k4UIdtqGLo4HgX8BJN0FT2HV00Xdahee2J');
 
 
 router.post('/success/confirm', async (req, res) => {
-    console.log('lmao this bod- ' + JSON.stringify(req.body));
     try {
         const foundUser = await User.findOne({sessionId: req.body.sessionId});
+        console.log('found user: ' + JSON.stringify(foundUser))
         if (foundUser.planType.slice(0,6) !== "maybe:") {
-            console.log('nvm')
+            console.log('Plan Type previously confirmed. Re-routing...')
             console.log(foundUser.planType)
             console.log(foundUser.signupDate)
         } else {
             foundUser.planType = foundUser.planType.slice(6);
-            console.log('slice? ' + foundUser.planType)
             const today = new Date();
             foundUser.signupDate = today;
             console.log(foundUser.signupDate)
@@ -46,13 +45,7 @@ router.post('/checkout', async (req, res) => {
         success_url: process.env.SUCCESS_URL,
         cancel_url: process.env.CANCEL_URL,
     });
-    const confirmedPlanId = session.display_items[0].plan.id;
-    console.log('this the returned session: ' + JSON.stringify(session));
-    console.log('ID? ' + (session.id));
-    console.log('PLAN id? ' + confirmedPlanId);
-
     const foundUser = await User.findOne({email: req.body.email});
-    console.log('found? ' + foundUser)
     foundUser.sessionId = session.id;
     foundUser.planType = "maybe:One";
     await foundUser.save();
@@ -81,7 +74,7 @@ router.post('/verify', withAuth, async (req, res) => {
               groupAdmin = foundUser.groupAdmin;
               if (foundUser.signupDate !== undefined) {
                 signupDate = foundUser.signupDate;
-                planType = foundUser.planType || "NONE";
+                planType = foundUser.planType;
                 isRegistered = true;
                 loggedIn = true;
               } else {
@@ -92,7 +85,6 @@ router.post('/verify', withAuth, async (req, res) => {
               }
           } catch(err){
               console.log(err)
-              foundUser = "lol"
           }
           res.send({
             status: 200,
@@ -114,26 +106,26 @@ router.post('/register', async (req, res) => {
     try{
         // Check to see if username already exists
         const possibleUser = await User.find({ email: req.body.email });
-        console.log('poss user: ' + possibleUser.length)
         if (possibleUser.length) {
-            console.log('got here!!' + possibleUser.email);
             res.send({
                 status: 401,
                 message: "Email is already registered.",
-            })
+            });
         } else {
-            console.log('got here i guess!!')
             const password = req.body.password;
             const passwordHash = bcrypt.hashSync(password, bcrypt.genSaltSync(12));
+            
             // Create an object to put into our database into the User Model
             const userEntry = {};
             userEntry.password = passwordHash;
             userEntry.email = req.body.email.toLowerCase();
             userEntry.name = req.body.name;
+
             const user = await User.create(userEntry);
-            console.log('user id: ' + user._id);
             const token = jwt.sign(user.email, "secret $tash");
+            
             user.save();
+            
             res.send({
                 status: 200,
                 data: user,
@@ -147,11 +139,9 @@ router.post('/register', async (req, res) => {
 });
 
 router.post('/reset', async (req, res) => {
-    console.log('here i guesss: ' + JSON.stringify(req.body));
     try{
         const email = req.body.email.toLowerCase();
         const foundUser = await User.findOne({email: email});
-        console.log('found bish: ' + foundUser);
         if (foundUser) {
             console.log('User found. Sending a password reset email.');
             sendResetPasswordEmail(foundUser);
@@ -165,16 +155,11 @@ router.post('/reset', async (req, res) => {
 });
 
 router.post('/reset/confirm', async (req, res) => {
-    console.log('fuck + ' + JSON.stringify(req.body))
     try {
         const id = req.body.id;
         const password = req.body.password;
         const passwordHash = bcrypt.hashSync(password, bcrypt.genSaltSync(12));
-        console.log('pw hash: ' + passwordHash)
-        const foundUser = await User.findByIdAndUpdate(id, {password: passwordHash});
-        console.log('foudn user::: ' + foundUser);
-        // foundUser.update({password: passwordHash});
-        // foundUser.save();
+        await User.findByIdAndUpdate(id, {password: passwordHash});
         res.send(200);
     } catch (e) {
         console.log('error: ' + e);
@@ -185,10 +170,8 @@ router.post('/reset/confirm', async (req, res) => {
 router.post('/login', async (req, res) => {
     const { email, password } = req.body
     try {
-        console.log("GOT HERE")
         const foundUser = await User.findOne({email: req.body.email.toLowerCase()});
         if(foundUser){
-            console.log("PWs - " + req.body.password + foundUser.password)
             if(bcrypt.compareSync(req.body.password, foundUser.password)){
                 const payload = foundUser.email;
                 const token = jwt.sign(payload, "secret $tash");
@@ -220,7 +203,7 @@ router.post('/login', async (req, res) => {
                 });
             }
         } else {
-            console.log("no user bitch")
+            console.log("no user")
             res.send({
                 status: 401,
                 data: "Username or Password is Wrong",
