@@ -132,6 +132,7 @@ router.get("/all", async (req, res) => {
 
 // Getting requested route
 router.get("/:id/:submittedLayerOne?/:submittedLayerTwo?/:submittedLayerThree?/:submittedLayerFour?/:submittedLayerFive?", async (req, res) => {
+  console.log('SUP')
   //parses through request params and concatentates the route name
   let rootLayer = req.params.submittedLayerOne
   if(req.params.submittedLayerTwo){
@@ -148,82 +149,97 @@ router.get("/:id/:submittedLayerOne?/:submittedLayerTwo?/:submittedLayerThree?/:
   }
   // Finding all routes associated with a user
   const routes = await Route.find({userId: req.params.id});
-  const user = await User.findById(req.params.id);
   
-  let route = null;
-  // Choosing the route of the submitted name
-  if (routes) {
-    for(let i=0; i<routes.length;i++){
-      if(routes[i].layerOne[rootLayer]){
-        route = routes[i]
+  let user;
+  try {
+    user = await User.findById(req.params.id);
+  } catch(err) {
+    console.log('err: ' + err);
+  }
+
+  if(user.planType.slice(0,6) === "One"){
+    console.log('Route active')
+  
+    let route = null;
+    // Choosing the route of the submitted name
+    if (routes) {
+      for(let i=0; i<routes.length;i++){
+        if(routes[i].layerOne[rootLayer]){
+          route = routes[i]
+        }
       }
     }
-  }
-  
-  if (route) {
-    const thisMonth = new Date().getMonth();
-    const thisYear = new Date().getFullYear();
+    
+    if (route) {
+      const thisMonth = new Date().getMonth();
+      const thisYear = new Date().getFullYear();
 
-    // Establishing route count object(s)
-    if (route.numberOfCalls === undefined) {
-      console.log('creating record of calls')
-      route.numberOfCalls = {};
-    }
-    if (route.numberOfCalls.details === undefined) {
-      console.log('creating route details')
-      route.numberOfCalls.details = {};
-    }
-    if (route.numberOfCalls.details[thisYear] === undefined) {
-      console.log('creating year')
-      route.numberOfCalls.details[thisYear] = {};
-    }
-    if (route.numberOfCalls.details[thisYear][thisMonth] === undefined) {
-      route.numberOfCalls.details[thisYear][thisMonth] = 0;
-      console.log('creating month')
-    }
+      // Establishing route count object(s)
+      if (route.numberOfCalls === undefined) {
+        console.log('creating record of calls')
+        route.numberOfCalls = {};
+      }
+      if (route.numberOfCalls.details === undefined) {
+        console.log('creating route details')
+        route.numberOfCalls.details = {};
+      }
+      if (route.numberOfCalls.details[thisYear] === undefined) {
+        console.log('creating year')
+        route.numberOfCalls.details[thisYear] = {};
+      }
+      if (route.numberOfCalls.details[thisYear][thisMonth] === undefined) {
+        route.numberOfCalls.details[thisYear][thisMonth] = 0;
+        console.log('creating month')
+      }
 
-    // Establishing user count object(s)
-    if (user.numberOfCalls === undefined) {
-      console.log('creating user record of calls')
-      user.numberOfCalls = {};
+      // Establishing user count object(s)
+      if (user.numberOfCalls === undefined) {
+        console.log('creating user record of calls')
+        user.numberOfCalls = {};
+      }
+      if (user.numberOfCalls.details === undefined) {
+        console.log('creating user details')
+        user.numberOfCalls.details = {};
+      }
+      if (user.numberOfCalls.details[thisYear] === undefined) {
+        console.log('creating user year')
+        user.numberOfCalls.details[thisYear] = {};
+      }
+      if (user.numberOfCalls.details[thisYear][thisMonth] === undefined) {
+        user.numberOfCalls.details[thisYear][thisMonth] = 0;
+        console.log('creating user month')
+      }
+
+
+      ++route.numberOfCalls.details[thisYear][thisMonth];
+      ++user.numberOfCalls.details[thisYear][thisMonth];
+
+      route.markModified('numberOfCalls.details');
+      user.markModified('numberOfCalls.details');
+
+      ++route.numberOfCalls.total;
+      ++user.numberOfCalls.total;
+
+      await route.save();
+      await user.save();
     }
-    if (user.numberOfCalls.details === undefined) {
-      console.log('creating user details')
-      user.numberOfCalls.details = {};
+    
+    if (route === null) {
+      res.json({
+        id: req.params.id,
+        data: "No routes available with that user ID."
+      })
+    } else {
+      res.json({
+        id: req.params.id,
+        data: route.layerOne[rootLayer]
+      })
     }
-    if (user.numberOfCalls.details[thisYear] === undefined) {
-      console.log('creating user year')
-      user.numberOfCalls.details[thisYear] = {};
-    }
-    if (user.numberOfCalls.details[thisYear][thisMonth] === undefined) {
-      user.numberOfCalls.details[thisYear][thisMonth] = 0;
-      console.log('creating user month')
-    }
-
-
-    ++route.numberOfCalls.details[thisYear][thisMonth];
-    ++user.numberOfCalls.details[thisYear][thisMonth];
-
-    route.markModified('numberOfCalls.details');
-    user.markModified('numberOfCalls.details');
-
-    ++route.numberOfCalls.total;
-    ++user.numberOfCalls.total;
-
-    await route.save();
-    await user.save();
-  }
-  
-  if (route === null) {
-    res.json({
-      id: req.params.id,
-      data: "No routes available with that user ID."
-    })
   } else {
     res.json({
       id: req.params.id,
-      data: route.layerOne[rootLayer]
-    })
+      data: "That user is no longer active, so their route is unavailable."
+    });
   }
 });
 
