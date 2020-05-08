@@ -48,6 +48,15 @@ router.post("/new", async (req, res) => {
         message: "Blank value(s) submitted."
       })
     }
+
+    // Trim slash off end of URL name if user included it
+    if (req.body.endpointName[req.body.endpointName.length-1] === "/") {
+      console.log(req.body.endpointName)
+      console.log('last part of endpoint name is /')
+      console.log(req.body.endpointName.slice(0,req.body.endpointName.length-1));
+      req.body.endpointName = req.body.endpointName.slice(0,req.body.endpointName.length-1);
+    }
+
     // Check for data length (to prevent system abuse)
     if (JSON.stringify(req.body.endpointValue).length > 2000) {
       console.log('too long jones')
@@ -59,6 +68,7 @@ router.post("/new", async (req, res) => {
       const newRoute = {};
       newRoute.userId = foundUser._id;
       newRoute["layerOne"] = {[req.body.endpointName]: req.body.endpointValue};
+      console.log('new boy: ' + JSON.stringify(newRoute))
     
     
       let rootLayer = req.body.endpointName
@@ -77,8 +87,7 @@ router.post("/new", async (req, res) => {
       if (route !== null) {
         console.log('Found route with same name, updating.')
         savedRoute = await Route.findByIdAndUpdate(route._id, newRoute)
-      }
-      else {
+      } else {
         console.log('Creating new route.')
         savedRoute  = await Route.create(newRoute);
       }
@@ -132,7 +141,6 @@ router.get("/all", async (req, res) => {
 
 // Getting requested route
 router.get("/:id/:submittedLayerOne?/:submittedLayerTwo?/:submittedLayerThree?/:submittedLayerFour?/:submittedLayerFive?", async (req, res) => {
-  console.log('SUP')
   //parses through request params and concatentates the route name
   let rootLayer = req.params.submittedLayerOne
   if(req.params.submittedLayerTwo){
