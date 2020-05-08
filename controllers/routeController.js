@@ -26,69 +26,75 @@ withAuth = async (req, res) => {
 router.post("/new", async (req, res) => {
   await withAuth(req, res) // this sets req.email to the user email
   const foundUser = await User.findOne({email: req.email});
+  if (foundUser.signupDate) {
+    // Check user plan type
+    // const planType = foundUser.planType;
+    // switch (planType) {
+    //   case "loneWolf":
+    //     shite;
+    //     break;
+    //   case "startup":
+    //     shite2;
+    //     break;
+    //   case "enterprise":
+    //     shite3;
+    //     break;
+    // }
   
-  // Check user plan type
-  // const planType = foundUser.planType;
-  // switch (planType) {
-  //   case "loneWolf":
-  //     shite;
-  //     break;
-  //   case "startup":
-  //     shite2;
-  //     break;
-  //   case "enterprise":
-  //     shite3;
-  //     break;
-  // }
-
-  // check for blank values
-  if (!req.body.endpointName || !req.body.endpointValue) {
-    res.send({
-      status: 500,
-      message: "Blank value(s) submitted."
-    })
-  }
-  // Check for data length (to prevent system abuse)
-  if (JSON.stringify(req.body.endpointValue).length > 2000) {
-    console.log('too long jones')
-    res.send({
-      status: 500,
-      message: "JSON message must be fewer than 2,000 characters."
-    })
-  } else {
-    const newRoute = {};
-    newRoute.userId = foundUser._id;
-    newRoute["layerOne"] = {[req.body.endpointName]: req.body.endpointValue};
-  
-  
-    let rootLayer = req.body.endpointName
-    // Finding all routes associated with a user
-    const routes = await Route.find({userId: foundUser.id});
-  
-    let route = null;
-    if (routes.length) {
-      for(let i=0; i<routes.length;i++){
-        if(routes[i].layerOne[rootLayer]){
-          route = routes[i]
+    // check for blank values
+    if (!req.body.endpointName || !req.body.endpointValue) {
+      res.send({
+        status: 500,
+        message: "Blank value(s) submitted."
+      })
+    }
+    // Check for data length (to prevent system abuse)
+    if (JSON.stringify(req.body.endpointValue).length > 2000) {
+      console.log('too long jones')
+      res.send({
+        status: 500,
+        message: "JSON message must be fewer than 2,000 characters."
+      })
+    } else {
+      const newRoute = {};
+      newRoute.userId = foundUser._id;
+      newRoute["layerOne"] = {[req.body.endpointName]: req.body.endpointValue};
+    
+    
+      let rootLayer = req.body.endpointName
+      // Finding all routes associated with a user
+      const routes = await Route.find({userId: foundUser.id});
+    
+      let route = null;
+      if (routes.length) {
+        for(let i=0; i<routes.length;i++){
+          if(routes[i].layerOne[rootLayer]){
+            route = routes[i]
+          }
         }
       }
+      
+      if (route !== null) {
+        console.log('Found route with same name, updating.')
+        savedRoute = await Route.findByIdAndUpdate(route._id, newRoute)
+      }
+      else {
+        console.log('Creating new route.')
+        savedRoute  = await Route.create(newRoute);
+      }
+      res.header(
+        {"Access-Control-Allow-Origin": "*"}
+      )
+      res.json({
+        status: 200,
+        message: "post request successful",
+        data: savedRoute
+      });
     }
-    
-    if (route !== null) {
-      console.log('Found route with same name, updating.')
-      savedRoute = await Route.findByIdAndUpdate(route._id, newRoute)
-    }
-    else {
-      console.log('Creating new route.')
-      savedRoute  = await Route.create(newRoute);
-    }
-    res.header(
-      {"Access-Control-Allow-Origin": "*"}
-    )
+  } else {
     res.json({
-      status: 200,
-      message: "post request successful",
-      data: savedRoute
+      status: 403,
+      message: "Only users with plans can create routes.",
     });
   }
 })
@@ -97,23 +103,35 @@ router.post("/new", async (req, res) => {
 router.get("/all", async (req, res) => {
   await withAuth(req, res) // this sets req.email to the user email
   console.log("WHAT'S THE EMAIL??", req.email); // this is for testing/debugging purposes
-  const foundUser = await User.findOne({email: req.email});
-  const foundRoutes = await Route.find({userId: foundUser._id})
-  res.header(
+  let foundUser;
+  try {
+    foundUser = await User.findOne({email: req.email});
+  } catch(err) {
+    console.log('No user with plan found. Err: ' + err);
+    res.json({
+      status: 500,
+      message: "No user with plan found.",
+  })};
+  if(foundUser.signupDate) {
+    const foundRoutes = await Route.find({userId: foundUser._id})
+    res.header(
       {"Access-Control-Allow-Origin": "*"}
-  )
-  res.json({
-      status: 200,
-      message: "post request successful",
-      data: foundRoutes
-  });
+    )
+    res.json({
+        status: 200,
+        message: "post request successful",
+        data: foundRoutes
+    });
+  } else {
+    res.json({
+      status: 403,
+      message: "User is registered, but hasn't actually subscribed to a plan yet.",
+    });
+  }
 })
 
 // Getting requested route
 router.get("/:id/:submittedLayerOne?/:submittedLayerTwo?/:submittedLayerThree?/:submittedLayerFour?/:submittedLayerFive?", async (req, res) => {
-  console.log('fwusjnkjfnas: ')
-  console.log(JSON.stringify(req.body))
-  console.log('--------------------------------------------------------')
   //parses through request params and concatentates the route name
   let rootLayer = req.params.submittedLayerOne
   if(req.params.submittedLayerTwo){
