@@ -13,6 +13,7 @@ const userSchema = new mongoose.Schema({
         details: Object,
     },
     signupDate: Date,
+    sessionId: String,
 })
 
 module.exports = mongoose.model('User', userSchema);

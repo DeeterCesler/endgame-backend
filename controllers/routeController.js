@@ -26,6 +26,21 @@ withAuth = async (req, res) => {
 router.post("/new", async (req, res) => {
   await withAuth(req, res) // this sets req.email to the user email
   const foundUser = await User.findOne({email: req.email});
+  
+  // Check user plan type
+  // const planType = foundUser.planType;
+  // switch (planType) {
+  //   case "loneWolf":
+  //     shite;
+  //     break;
+  //   case "startup":
+  //     shite2;
+  //     break;
+  //   case "enterprise":
+  //     shite3;
+  //     break;
+  // }
+
   // check for blank values
   if (!req.body.endpointName || !req.body.endpointValue) {
     res.send({
@@ -96,6 +111,8 @@ router.get("/all", async (req, res) => {
 
 // Getting requested route
 router.get("/:id/:submittedLayerOne?/:submittedLayerTwo?/:submittedLayerThree?/:submittedLayerFour?/:submittedLayerFive?", async (req, res) => {
+  console.log('fwusjnkjfnas: ')
+  console.log(JSON.stringify(req.body))
   console.log('--------------------------------------------------------')
   //parses through request params and concatentates the route name
   let rootLayer = req.params.submittedLayerOne

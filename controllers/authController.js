@@ -6,7 +6,62 @@ const jwt = require("jsonwebtoken");
 const withAuth = require("../middleware/authToken");
 const secret = "secret $tash";
 const sendResetPasswordEmail = require('../emails');
+const stripe = require('stripe')('sk_test_k4UIdtqGLo4HgX8BJN0FT2HV00Xdahee2J');
 
+
+router.post('/success/confirm', async (req, res) => {
+    console.log('lmao this bod- ' + JSON.stringify(req.body));
+    try {
+        const foundUser = await User.findOne({sessionId: req.body.sessionId});
+        if (foundUser.planType.slice(0,6) !== "maybe:") {
+            console.log('nvm')
+            console.log(foundUser.planType)
+            console.log(foundUser.signupDate)
+        } else {
+            foundUser.planType = foundUser.planType.slice(6);
+            console.log('slice? ' + foundUser.planType)
+            const today = new Date();
+            foundUser.signupDate = today;
+            console.log(foundUser.signupDate)
+            await foundUser.save();
+        }
+    } catch(err) {
+        console.log('err: ' + err)
+    }
+    res.json({
+        status: 200,
+        loggedIn: true,
+        data: "All is well with the world."
+    })
+});
+
+router.post('/checkout', async (req, res) => {
+    const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        subscription_data: {
+          items: [{
+            plan: 'plan_HDgeSMmiqdEURZ',
+          }],
+        },
+        success_url: process.env.SUCCESS_URL,
+        cancel_url: process.env.CANCEL_URL,
+    });
+    const confirmedPlanId = session.display_items[0].plan.id;
+    console.log('this the returned session: ' + JSON.stringify(session));
+    console.log('ID? ' + (session.id));
+    console.log('PLAN id? ' + confirmedPlanId);
+
+    const foundUser = await User.findOne({email: req.body.email});
+    console.log('found? ' + foundUser)
+    foundUser.sessionId = session.id;
+    foundUser.planType = "maybe:One";
+    await foundUser.save();
+
+    res.json({
+        sessionId: session.id,
+        status: 200,
+    })      
+});
 
 router.post('/verify', withAuth, async (req, res) => {
     const token = req.headers["authorization"];
@@ -24,7 +79,17 @@ router.post('/verify', withAuth, async (req, res) => {
               name = foundUser.name;
               owner = foundUser.owner;
               groupAdmin = foundUser.groupAdmin;
-              planType = foundUser.planType;
+              if (foundUser.signupDate !== undefined) {
+                signupDate = foundUser.signupDate;
+                planType = foundUser.planType || "NONE";
+                isRegistered = true;
+                loggedIn = true;
+              } else {
+                signupDate = null;
+                planType = "Registered, but no plan.";
+                isRegistered = true;
+                loggedIn = false;
+              }
           } catch(err){
               console.log(err)
               foundUser = "lol"
@@ -37,6 +102,9 @@ router.post('/verify', withAuth, async (req, res) => {
             owner: owner,
             groupAdmin: groupAdmin,
             planType: planType,
+            signupDate: signupDate,
+            loggedIn: loggedIn,
+            isRegistered: isRegistered
           })
       }
     })
@@ -55,7 +123,6 @@ router.post('/register', async (req, res) => {
             })
         } else {
             console.log('got here i guess!!')
-            const today = new Date();
             const password = req.body.password;
             const passwordHash = bcrypt.hashSync(password, bcrypt.genSaltSync(12));
             // Create an object to put into our database into the User Model
@@ -63,7 +130,6 @@ router.post('/register', async (req, res) => {
             userEntry.password = passwordHash;
             userEntry.email = req.body.email.toLowerCase();
             userEntry.name = req.body.name;
-            userEntry.signupDate = today;
             const user = await User.create(userEntry);
             console.log('user id: ' + user._id);
             const token = jwt.sign(user.email, "secret $tash");
@@ -117,11 +183,7 @@ router.post('/reset/confirm', async (req, res) => {
   
   
 router.post('/login', async (req, res) => {
-    console.log("TRYING LOGIN")
-    console.log("REK BODY: " + JSON.stringify(req.body))
     const { email, password } = req.body
-    console.log('EMAIL: ' + email);
-    console.log('PASSWERD: ' + password);
     try {
         console.log("GOT HERE")
         const foundUser = await User.findOne({email: req.body.email.toLowerCase()});
@@ -130,10 +192,24 @@ router.post('/login', async (req, res) => {
             if(bcrypt.compareSync(req.body.password, foundUser.password)){
                 const payload = foundUser.email;
                 const token = jwt.sign(payload, "secret $tash");
+                if (foundUser.signupDate !== undefined) {
+                    signupDate = foundUser.signupDate;
+                    planType = foundUser.planType || "NONE";
+                    isRegistered = true;
+                    loggedIn = true;
+                } else {
+                    signupDate = null;
+                    planType = "Registered, but no plan.";
+                    isRegistered = true;
+                    loggedIn = false;
+                }
                 res.send({
                     status: 200,
                     data: foundUser,
-                    token: token
+                    token: token,
+                    loggedIn: loggedIn,
+                    isRegistered: isRegistered,
+        
                 })
                 console.log("done logged in")
             } else {
