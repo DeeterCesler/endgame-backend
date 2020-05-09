@@ -196,7 +196,9 @@ router.post('/reset/confirm', async (req, res) => {
         const password = req.body.password;
         const passwordHash = bcrypt.hashSync(password, bcrypt.genSaltSync(12));
         await User.findByIdAndUpdate(id, {password: passwordHash});
-        res.send(200);
+        res.json({
+            status: 200,
+        })
     } catch (e) {
         console.log('error: ' + e);
     }
