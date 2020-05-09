@@ -35,11 +35,36 @@ router.post('/success/confirm', async (req, res) => {
 });
 
 router.post('/checkout', async (req, res) => {
+    // test plans
+    const loneWolfTest = 'plan_HDgeSMmiqdEURZ';
+    const startupTest = 'plan_HFRvh7agyjdR8q';
+    const enterpriseTest = 'plan_HFRxJdaakgJ8SC';
+    
+    // actual plans
+    // TO DO: add these
+    
+    console.log('req body checkout: ' + JSON.stringify(req.body));
+    const chosenPlan = req.body.planType;
+
+    let planId;
+    switch (chosenPlan) {
+        case "loneWolf":
+            planId = loneWolfTest
+            break;
+        case "startup":
+            planId = startupTest
+            break;
+        case "enterprise":
+            planId = enterpriseTest
+            break;
+    }
+    console.log('chose: ' + planId);
+
     const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         subscription_data: {
           items: [{
-            plan: 'plan_HDgeSMmiqdEURZ',
+            plan: planId,
           }],
         },
         success_url: process.env.SUCCESS_URL,
@@ -79,7 +104,7 @@ router.post('/verify', withAuth, async (req, res) => {
                 loggedIn = true;
               } else {
                 signupDate = null;
-                planType = "Registered, but no plan.";
+                planType = null;
                 isRegistered = true;
                 loggedIn = false;
               }
@@ -140,17 +165,28 @@ router.post('/register', async (req, res) => {
 
 router.post('/reset', async (req, res) => {
     try{
+        console.log('okay')
         const email = req.body.email.toLowerCase();
+        console.log('email: ' + email);
         const foundUser = await User.findOne({email: email});
         if (foundUser) {
             console.log('User found. Sending a password reset email.');
             sendResetPasswordEmail(foundUser);
+            res.json({
+                status: 200,
+            })
         } else {
             console.log('not a real user lol');
+            res.json({
+                status: 401,
+            })
         }
     } catch (err) {
         console.log('Error: ' + err);
-        res.send(err);
+        res.send({
+            status: 500,
+            data: err,
+        });
     }
 });
 
@@ -182,7 +218,7 @@ router.post('/login', async (req, res) => {
                     loggedIn = true;
                 } else {
                     signupDate = null;
-                    planType = "Registered, but no plan.";
+                    planType = null;
                     isRegistered = true;
                     loggedIn = false;
                 }
