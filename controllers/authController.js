@@ -6,7 +6,8 @@ const jwt = require("jsonwebtoken");
 const withAuth = require("../middleware/authToken");
 const secret = "secret $tash";
 const sendResetPasswordEmail = require('../emails');
-const stripe = require('stripe')('sk_test_k4UIdtqGLo4HgX8BJN0FT2HV00Xdahee2J');
+require("dotenv").config();
+const stripe = require('stripe')(process.env.STRIPE_KEY);
 
 
 router.post('/success/confirm', async (req, res) => {
@@ -35,27 +36,16 @@ router.post('/success/confirm', async (req, res) => {
 });
 
 router.post('/checkout', async (req, res) => {
-    // test plans
-    const loneWolfTest = 'plan_HDgeSMmiqdEURZ';
-    const startupTest = 'plan_HFRvh7agyjdR8q';
-    const enterpriseTest = 'plan_HFRxJdaakgJ8SC';
-    
-    // actual plans
-    // TO DO: add these
-    
-    console.log('req body checkout: ' + JSON.stringify(req.body));
-    const chosenPlan = req.body.planType;
-
     let planId;
-    switch (chosenPlan) {
+    switch (req.body.planType) {
         case "loneWolf":
-            planId = loneWolfTest
+            planId = process.env.LONE_WOLF;
             break;
         case "startup":
-            planId = startupTest
+            planId = process.env.STARTUP;
             break;
         case "enterprise":
-            planId = enterpriseTest
+            planId = process.env.ENTERPRISE;
             break;
     }
     console.log('chose: ' + planId);
@@ -72,7 +62,7 @@ router.post('/checkout', async (req, res) => {
     });
     const foundUser = await User.findOne({email: req.body.email});
     foundUser.sessionId = session.id;
-    foundUser.planType = "maybe:One";
+    foundUser.planType = "maybe:" + req.body.planType;
     await foundUser.save();
 
     res.json({
