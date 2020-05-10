@@ -13,16 +13,13 @@ const stripe = require('stripe')(process.env.STRIPE_KEY);
 router.post('/success/confirm', async (req, res) => {
     try {
         const foundUser = await User.findOne({sessionId: req.body.sessionId});
-        console.log('found user: ' + JSON.stringify(foundUser))
         if (foundUser.planType.slice(0,6) !== "maybe:") {
             console.log('Plan Type previously confirmed. Re-routing...')
             console.log(foundUser.planType)
-            console.log(foundUser.signupDate)
         } else {
             foundUser.planType = foundUser.planType.slice(6);
             const today = new Date();
             foundUser.signupDate = today;
-            console.log(foundUser.signupDate)
             await foundUser.save();
         }
     } catch(err) {
@@ -48,7 +45,6 @@ router.post('/checkout', async (req, res) => {
             planId = process.env.ENTERPRISE;
             break;
     }
-    console.log('chose: ' + planId);
 
     const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
