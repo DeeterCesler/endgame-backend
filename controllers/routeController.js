@@ -165,9 +165,7 @@ router.get("/:id/:submittedLayerOne?/:submittedLayerTwo?/:submittedLayerThree?/:
     console.log('err: ' + err);
   }
 
-  if(user.planType.slice(0,6) === "One"){
-    console.log('Route active')
-  
+  if(user.planType.slice(6).length){
     let route = null;
     // Choosing the route of the submitted name
     if (routes) {
