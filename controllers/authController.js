@@ -109,7 +109,7 @@ router.post('/verify', withAuth, async (req, res) => {
             loggedIn: loggedIn,
             isRegistered: isRegistered
           })
-      }
+        }
     })
 });
 
