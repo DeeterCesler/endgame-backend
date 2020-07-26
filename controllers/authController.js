@@ -140,7 +140,9 @@ router.post('/register', async (req, res) => {
             res.send({
                 status: 200,
                 data: user,
-                token: token
+                token: token,
+                loggedIn: false,
+                isRegistered: true,
             });
             console.log("done registered");
         }
