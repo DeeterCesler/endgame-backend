@@ -19,7 +19,7 @@
     "express-session": "^1.16.2",
     "extend": "^3.0.2",
     "gmail-send": "^1.8.10",
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": "^9.0.0",
     "kue": "^0.11.6",
     "method-override": "^3.0.0",
     "mongoose": "^5.7.1",
